@@ -6,9 +6,6 @@ import time
 import os
 import argparse
 
-# =============================================================================
-# 1. PHYSICAL CONSTANTS AND SIMULATION PARAMETERS
-# =============================================================================
 # Number of simulated electrons
 NUM_ELECTRONS = 100_000
 
@@ -68,6 +65,7 @@ np.random.seed(seed=23)
 DT = 1e-12
 
 def print_constants():
+    #Print of important constants of the simulation
     print("\n=== CONSTANTS AND SIMULATION PARAMETERS ===\n")
     print(f"MEAN ELECTRIC FIELD : {MEAN_EFIELD:.3e} V/m")
     print(f"SIGMA ELECTRIC FIELD: {SIGMA_EFIELD:.3e} V/m")
@@ -78,16 +76,11 @@ def print_constants():
     print(f"N deflection steps : {int(DEFLECTION_TIME/DT)}\n")
     print(f"SIGMA_PHOSPHOR  : {SIGMA_PHOSPHOR:.3e} m")
     print(f"K_LENS          : {K_LENS:.3e} kg/(C*m²)")
-    print(f"OMEGA_LENS      : {OMEGA_LENS:.3e} rad/s\n")
     print("\n===========================================\n")
 
 
-# =============================================================================
-# 2. UTILITIES
-# =============================================================================
-
 def print_statistical_results(points, description):
-    """Prints sigma_x and sigma_y in mm for a cloud of points."""
+    """Prints statistics about the distribution of xs and ys in mm for a cloud of points."""
     sigma = np.std(points, axis=0) * 1e3
     print("\n===========================================\n")
     print(f"{description}")
@@ -102,14 +95,12 @@ def print_statistical_results(points, description):
     print(f"Simulated mean y: {mean_y:.4f} mm | Theoretical: {y_t*1e3:.4f} mm | Delta = {y_t*1e3 - mean_y:+.4f} mm")
 
 
-# =============================================================================
-# 3. PROBLEM PHYSICS
-# =============================================================================
 def generate_initial_positions(radius, n):
     """Distributes n electrons uniformly in a disk of given radius."""
     theta = np.random.uniform(0, 2 * np.pi, n)
     r = radius * np.sqrt(np.random.uniform(0, 1, n))
     return r * np.cos(theta), r * np.sin(theta)
+
 
 def generate_gaussian_numbers(mu, sigma, size=1):
     """Generates Gaussian random numbers using Box-Muller."""
@@ -118,6 +109,7 @@ def generate_gaussian_numbers(mu, sigma, size=1):
     R = np.sqrt(-2 * np.log(u1))
     theta = 2 * np.pi * u2
     return mu + sigma * R * np.cos(theta)
+
 
 def theoretical_electron_y(use_lens):
     """Computes the theoretical final y-position of a point-like beam under uniform field."""
@@ -133,6 +125,7 @@ def theoretical_electron_y(use_lens):
 
     return y_fin
 
+
 def apply_lens(x, y, vx, vy):
     """Applies electrostatic lens to electron beams."""
     ax = -ELECTRON_CHARGE * K_LENS * x / ELECTRON_MASS
@@ -146,16 +139,15 @@ def apply_lens(x, y, vx, vy):
 
     return x_l, y_l
 
+
 def add_phosphor_diffusion(points, sigma_phosphor):
-    """Adds Gaussian diffusion to simulated points."""
+    """Adds Gaussian diffusion to simulated points to model the phosphorus response."""
     points_diffused = points.copy()
     points_diffused[:, 0] += generate_gaussian_numbers(0, sigma_phosphor, len(points))
     points_diffused[:, 1] += generate_gaussian_numbers(0, sigma_phosphor, len(points))
     return points_diffused
 
-# =============================================================================
-# 4. SIMULATION MODELS
-# =============================================================================
+
 def simulate_convolution_model(x0, y0):
     """Simulation using the convolution model. Returns positions and velocities."""
     n = len(x0)
@@ -171,7 +163,7 @@ def simulate_convolution_model(x0, y0):
 
 
 def simulate_first_order_model(x0, y0):
-    """Simulation using the first-order model. Returns positions and velocities."""
+    """Simulation using the first-order model. Returns positions and velocities at the edge of the plates."""
     n = len(x0)
     sigma = epsilon_0 * MEAN_EFIELD
     v_z = VEL_Z
@@ -200,13 +192,16 @@ def simulate_first_order_model(x0, y0):
 
     return x, y, vx, vy
 
+
 def propagate_to_screen(x, y, vx, vy, use_lens):
+    """Simulation of the motion of electrons after the plates"""
     if use_lens:
         return apply_lens(x, y, vx, vy)
     else:
         x_final = x + vx * (TOTAL_TIME - DEFLECTION_TIME)
         y_final = y + vy * (TOTAL_TIME - DEFLECTION_TIME)
         return x_final, y_final
+
 
 def simulate_electron_batch(x0, y0, model):
     """Dispatcher for the different simulation models. Returns positions and velocities."""
@@ -218,12 +213,8 @@ def simulate_electron_batch(x0, y0, model):
         raise ValueError("Unrecognized model")
 
 
-
-# =============================================================================
-# 5. VISUALIZATION
-# =============================================================================
 def plot_full_results(points, model, y_theoretical=None, sigma_phosphor=None, save_dir="plots"):
-    """Creates X/Y histograms and scatter plots of impact points and saves the image to file."""
+    """Creates X/Y histograms, scatter plots of impact points and saves the image to file."""
 
     # Create folder if it does not exist
     os.makedirs(save_dir, exist_ok=True)
@@ -280,9 +271,6 @@ def plot_full_results(points, model, y_theoretical=None, sigma_phosphor=None, sa
     plt.close(fig) 
 
 
-# =============================================================================
-# 6. MAIN
-# =============================================================================
 if __name__ == "__main__":
     # Parser
     parser = argparse.ArgumentParser(description="Electron beam simulator")
