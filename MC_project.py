@@ -62,7 +62,7 @@ K_LENS, OMEGA_LENS = compute_lens_k(ELECTRON_MASS, ELECTRON_CHARGE, VEL_Z, LENS_
 
 # Seed for reproducibility and integration step
 np.random.seed(seed=23)
-DT = 1e-12
+DT = 1e-12      #[s]
 
 def print_constants():
     #Print of important constants of the simulation
@@ -126,28 +126,6 @@ def theoretical_electron_y(use_lens):
     return y_fin
 
 
-def apply_lens(x, y, vx, vy):
-    """Applies electrostatic lens to electron beams."""
-    ax = -ELECTRON_CHARGE * K_LENS * x / ELECTRON_MASS
-    ay = -ELECTRON_CHARGE * K_LENS * y / ELECTRON_MASS
-
-    vx_l = vx + ax * LENS_TIME
-    vy_l = vy + ay * LENS_TIME
-
-    x_l = x + vx * LENS_TIME + 0.5 * ax * LENS_TIME**2
-    y_l = y + vy * LENS_TIME + 0.5 * ay * LENS_TIME**2
-
-    return x_l, y_l
-
-
-def add_phosphor_diffusion(points, sigma_phosphor):
-    """Adds Gaussian diffusion to simulated points to model the phosphorus response."""
-    points_diffused = points.copy()
-    points_diffused[:, 0] += generate_gaussian_numbers(0, sigma_phosphor, len(points))
-    points_diffused[:, 1] += generate_gaussian_numbers(0, sigma_phosphor, len(points))
-    return points_diffused
-
-
 def simulate_convolution_model(x0, y0):
     """Simulation using the convolution model. Returns positions and velocities."""
     n = len(x0)
@@ -192,6 +170,19 @@ def simulate_first_order_model(x0, y0):
 
     return x, y, vx, vy
 
+def apply_lens(x, y, vx, vy):
+    """Applies electrostatic lens to electron beams."""
+    ax = -ELECTRON_CHARGE * K_LENS * x / ELECTRON_MASS
+    ay = -ELECTRON_CHARGE * K_LENS * y / ELECTRON_MASS
+
+    vx_l = vx + ax * LENS_TIME
+    vy_l = vy + ay * LENS_TIME
+
+    x_l = x + vx * LENS_TIME + 0.5 * ax * LENS_TIME**2
+    y_l = y + vy * LENS_TIME + 0.5 * ay * LENS_TIME**2
+
+    return x_l, y_l
+
 
 def propagate_to_screen(x, y, vx, vy, use_lens):
     """Simulation of the motion of electrons after the plates"""
@@ -212,6 +203,12 @@ def simulate_electron_batch(x0, y0, model):
     else:
         raise ValueError("Unrecognized model")
 
+def add_phosphor_diffusion(points, sigma_phosphor):
+    """Adds Gaussian diffusion to simulated points to model the phosphorus response."""
+    points_diffused = points.copy()
+    points_diffused[:, 0] += generate_gaussian_numbers(0, sigma_phosphor, len(points))
+    points_diffused[:, 1] += generate_gaussian_numbers(0, sigma_phosphor, len(points))
+    return points_diffused
 
 def plot_full_results(points, model, y_theoretical=None, sigma_phosphor=None, save_dir="plots"):
     """Creates X/Y histograms, scatter plots of impact points and saves the image to file."""
