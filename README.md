@@ -28,7 +28,7 @@ This repository contains a Python simulator for an electron beam passing through
 Run the simulation from the command line:
 
 '''bash
-python simulate_electron_beam.py --model all --lens all --diffusion --outdir results
+python MC_project.py --model all --lens all --diffusion --outdir results
 '''
 
 ## Arguments
@@ -48,6 +48,7 @@ Statistics: printed mean, standard deviation, and skewness of the electron beam.
 '''bash
 python MC_project.py --model convolution --lens with --outdir my_results
 '''
+
 Simulates the convolution model with the lens active and saves plots in my_results/.
 
 License
