@@ -28,25 +28,29 @@ This repository contains a Python simulator for an electron beam passing through
 Run the simulation from the command line:
 
 '''bash
+
 python MC_project.py --model all --lens all --diffusion --outdir results
+
 '''
 
 ## Arguments
-Argument    Options Description
---model {convolution, first_order, all} Choose the simulation model
---lens	{with, without, all}    Select if using the electrostatic lens
---diffusion	(flag)  Add phosphor diffusion to the results
---outdir	folder_name Directory to save plots and outputs (default: plots)
+# Argument    Options Description
+- --model {convolution, first_order, all} Choose the simulation model
+- --lens	{with, without, all}    Select if using the electrostatic lens
+- --diffusion	(flag)  Add phosphor diffusion to the results
+- --outdir	folder_name Directory to save plots and outputs (default: plots)
 
 ## Output
-Plots: histograms for X/Y distributions and 2D scatter of electron impact points.
+- Plots: histograms for X/Y distributions and 2D scatter of electron impact points.
 
-Statistics: printed mean, standard deviation, and skewness of the electron beam.
+- Statistics: printed mean, standard deviation, and skewness of the electron beam.
 
 
 ## Example
 '''bash
+
 python MC_project.py --model convolution --lens with --outdir my_results
+
 '''
 
 Simulates the convolution model with the lens active and saves plots in my_results/.
