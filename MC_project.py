@@ -1,10 +1,12 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import skew
-from scipy.optimize import fsolve
-import time
-import os
 import argparse
+import os
+import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.optimize import fsolve
+from scipy.stats import skew
+
 
 # Number of simulated electrons
 NUM_ELECTRONS = 100_000
