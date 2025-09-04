@@ -21,9 +21,9 @@ This repository contains a Python simulator for an electron beam passing through
 
 - Python => 3.8
 - Required packages:
-  '''bash
+  ```bash
   pip install numpy matplotlib scipy argparse
-  '''
+  ```
 
 
 
