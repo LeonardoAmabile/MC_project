@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -66,17 +67,28 @@ np.random.seed(seed=23)
 DT = 1e-12      #[s]
 
 def print_constants():
-    #Print of important constants of the simulation
+    """
+    Print key constants and simulation parameters in a structured format.
+    All values are displayed with scientific notation where appropriate.
+    """
+    constants = {
+        "Mean electric field": (MEAN_EFIELD, "V/m"),
+        "Sigma electric field": (SIGMA_EFIELD, "V/m"),
+        "Velocity along z": (VEL_Z, "m/s"),
+        "Deflection time": (DEFLECTION_TIME, "s"),
+        "Lens time": (LENS_TIME, "s"),
+        "Total time": (TOTAL_TIME, "s"),
+        "N deflection steps": (int(DEFLECTION_TIME / DT), ""),  # no unit
+        "Sigma phosphor": (SIGMA_PHOSPHOR, "m"),
+        "K_LENS": (K_LENS, "kg/(C·m²)"),
+    }
+
     print("\n=== CONSTANTS AND SIMULATION PARAMETERS ===\n")
-    print(f"MEAN ELECTRIC FIELD : {MEAN_EFIELD:.3e} V/m")
-    print(f"SIGMA ELECTRIC FIELD: {SIGMA_EFIELD:.3e} V/m")
-    print(f"VELOCITY ALONG Z    : {VEL_Z:.3e} m/s\n")
-    print(f"DEFLECTION TIME : {DEFLECTION_TIME:.3e} s")
-    print(f"LENS TIME       : {LENS_TIME:.3e} s")
-    print(f"TOTAL TIME      : {TOTAL_TIME:.3e} s")
-    print(f"N deflection steps : {int(DEFLECTION_TIME/DT)}\n")
-    print(f"SIGMA_PHOSPHOR  : {SIGMA_PHOSPHOR:.3e} m")
-    print(f"K_LENS          : {K_LENS:.3e} kg/(C*m²)")
+    for name, (value, unit) in constants.items():
+        if isinstance(value, float):
+            print(f"{name:<22}: {value:.3e} {unit}")
+        else:
+            print(f"{name:<22}: {value} {unit}")
     print("\n===========================================\n")
 
 
@@ -128,7 +140,7 @@ def theoretical_electron_y(use_lens):
 
 
 def simulate_convolution_model(x0, y0):
-    """Simulation using the convolution model. Returns positions and velocities."""
+    """Simulation using the convolution model. Returns positions and velocities at the edge of the plates."""
     n = len(x0)
     efield = generate_gaussian_numbers(MEAN_EFIELD, SIGMA_EFIELD, n)
     ay = ELECTRON_CHARGE * efield / ELECTRON_MASS
@@ -172,7 +184,7 @@ def simulate_first_order_model(x0, y0):
     return x, y, vx, vy
 
 def apply_lens(x, y, vx, vy):
-    """Applies electrostatic lens to electron beams."""
+    """Applies electrostatic lens to electron beams after the plates."""
     ax = -ELECTRON_CHARGE * K_LENS * x / ELECTRON_MASS
     ay = -ELECTRON_CHARGE * K_LENS * y / ELECTRON_MASS
 
@@ -196,7 +208,7 @@ def propagate_to_screen(x, y, vx, vy, use_lens):
 
 
 def simulate_electron_batch(x0, y0, model):
-    """Dispatcher for the different simulation models. Returns positions and velocities."""
+    """Dispatcher for the different simulation models. Returns positions and velocities right after the plates."""
     if model == 'convolution':
         return simulate_convolution_model(x0, y0)
     elif model == 'first_order':
@@ -216,30 +228,30 @@ def plot_full_results(points, model, y_theoretical=None, sigma_phosphor=None, sa
 
     # Create folder if it does not exist
     os.makedirs(save_dir, exist_ok=True)
-
+    #If phosphorus's on, add the normal noise
     points_to_show = add_phosphor_diffusion(points, sigma_phosphor) if sigma_phosphor else points
-
+    #Plot the three images
     fig, axs = plt.subplots(1, 3, figsize=(15, 5), constrained_layout=True)
     fig.suptitle(
         f"Simulation model: {model.upper()}" +
         (f" + phosphor diffusion " if sigma_phosphor else ""),
         fontsize=16, weight='bold'
     )
-
+    #histogram on the x-axis
     axs[0].hist(points_to_show[:, 0]*1e3, bins=50,
                 color='dodgerblue' if sigma_phosphor is None else 'orange',
                 edgecolor='black', alpha=0.8)
     axs[0].set_title('X Distribution')
     axs[0].set_xlabel('x [mm]')
     axs[0].set_ylabel('Count')
-
+    #histogram on the y-axis
     axs[1].hist(points_to_show[:, 1]*1e3, bins=50,
                 color='crimson' if sigma_phosphor is None else 'firebrick',
                 edgecolor='black', alpha=0.8)
     axs[1].set_title('Y Distribution')
     axs[1].set_xlabel('y [mm]')
     axs[1].set_ylabel('Count')
-
+    #Scatterplot x-y
     x_mm = points_to_show[:, 0]*1e3
     y_mm = points_to_show[:, 1]*1e3
     axs[2].scatter(x_mm, y_mm, s=2, alpha=0.3,
@@ -248,7 +260,7 @@ def plot_full_results(points, model, y_theoretical=None, sigma_phosphor=None, sa
     axs[2].set_xlabel('x [mm]')
     axs[2].set_ylabel('y [mm]')
     axs[2].set_aspect('equal', adjustable='datalim')
-
+    #Plot a cross with the theorical position of a puntiform source in an homogeneous field
     if y_theoretical is not None and sigma_phosphor is None:
         axs[2].scatter(0, y_theoretical * 1e3, color='black', marker='x', s=100, label='Theoretical position')
         axs[2].legend(loc='upper right')
@@ -257,14 +269,15 @@ def plot_full_results(points, model, y_theoretical=None, sigma_phosphor=None, sa
         ax.grid(True, linestyle='--', alpha=0.5)
         for spine in ax.spines.values():
             spine.set_visible(False)
-
-    description = model.upper() + " with_diffusion" if sigma_phosphor else model.upper() + " without_diffusion"
+    #String with the used model
+    description = model.upper() + (" with_diffusion" if sigma_phosphor else " without_diffusion")
+    #Print statistical results of the distribution of points
     print_statistical_results(points_to_show, description)
-
-    # Clear and readable filename
-    filename = f"{description.replace(' ', '_')}.png"
+    #Correcting the description string to be the filename
+    filename = description.replace(" ", "_")
+    filename = filename + ".png"
     filepath = os.path.join(save_dir, filename)
-
+    #Save figure
     plt.savefig(filepath, dpi=300)
     plt.close(fig) 
 
@@ -280,10 +293,16 @@ if __name__ == "__main__":
         "--diffusione", choices=["with", "without", "all"], default="all",
         help="Select simulation with phosphor diffusion, without, or both (default: all)")
     parser.add_argument("--outdir", default="plots", help="Folder to save results (default is 'plots')")
+    parser.add_argument("--constants", action="store_true",
+                        help="Print constants and exit without running simulations")
     args = parser.parse_args()
 
     # Print constants
     print_constants()
+
+    # Exit early if only constants are requested
+    if args.constants:
+        sys.exit(0)
 
     # Generate initial particle positions in the x-y plane
     x0, y0 = generate_initial_positions(SOURCE_RADIUS, NUM_ELECTRONS)
@@ -314,11 +333,12 @@ if __name__ == "__main__":
                 
                 plot_full_results(
                     points,
-                    model=f"{model} ({lens_state})",
+                    model=f"{model}_{lens_state}_",
                     y_theoretical=y_t if not use_diffusion else None,
                     sigma_phosphor=sigma,
                     save_dir=args.outdir
                 )
+
 
 
 
