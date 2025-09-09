@@ -27,7 +27,13 @@ epsilon_0 = 8.85e-12            # [F/m]
 
 # Initial kinematics
 V0_VOLTAGE = 100                # [V]
-VEL_Z = np.sqrt((2*ELECTRON_CHARGE*V_SUPPLY / ELECTRON_MASS))    # [m/s]
+
+def V_Z():
+    C= 2.99e8  #[m/s]
+    gamma = ((ELECTRON_CHARGE*V_SUPPLY)/(ELECTRON_MASS*(C**2))) +1
+    beta = np.sqrt(1-(1/gamma**2))
+    return beta*C
+VEL_Z = V_Z()    # [m/s]
 
 # Characteristic times
 DEFLECTION_TIME = 2 * PLATE_RADIUS / VEL_Z
@@ -326,14 +332,14 @@ if __name__ == "__main__":
             y_t = theoretical_electron_y(use_lens)
 
             for use_diffusion in diffusion_states:
-                diffusion_label = "with_diffusion" if use_diffusion else "without_diffusion"
+                diffusion_label = "with diffusion" if use_diffusion else "without diffusion"
                 sigma = SIGMA_PHOSPHOR if use_diffusion else None
 
                 points = np.column_stack((x_final, y_final))
                 
                 plot_full_results(
                     points,
-                    model=f"{model}_{lens_state}_",
+                    model=f"{model} {lens_state}",
                     y_theoretical=y_t if not use_diffusion else None,
                     sigma_phosphor=sigma,
                     save_dir=args.outdir
