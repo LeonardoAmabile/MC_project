@@ -296,7 +296,7 @@ if __name__ == "__main__":
     parser.add_argument("--lens", choices=["with", "without", "all"], default="all",
                         help="Select whether to use the lens ('all' is default)")
     parser.add_argument(
-        "--diffusione", choices=["with", "without", "all"], default="all",
+        "--diffusion", choices=["with", "without", "all"], default="all",
         help="Select simulation with phosphor diffusion, without, or both (default: all)")
     parser.add_argument("--outdir", default="plots", help="Folder to save results (default is 'plots')")
     parser.add_argument("--constants", action="store_true",
@@ -316,7 +316,7 @@ if __name__ == "__main__":
     # Define models and lens states to simulate
     models = ["convolution", "first_order"] if args.model == "all" else [args.model]
     lens_states = [False, True] if args.lens == "all" else [args.lens == "with"]
-    diffusion_states = [False, True] if args.diffusione == "all" else [args.diffusione == "with"]
+    diffusion_states = [False, True] if args.diffusion == "all" else [args.diffusione == "with"]
 
     # Simulation loop
     for model in models:
