@@ -29,6 +29,7 @@ epsilon_0 = 8.85e-12            # [F/m]
 V0_VOLTAGE = 100                # [V]
 
 def V_Z():
+    #COmputes the V_Z in relativistic approach
     C= 2.99e8  #[m/s]
     gamma = ((ELECTRON_CHARGE*V_SUPPLY)/(ELECTRON_MASS*(C**2))) +1
     beta = np.sqrt(1-(1/gamma**2))
@@ -98,7 +99,7 @@ def print_constants():
     print("\n===========================================\n")
 
 
-def print_statistical_results(points, description):
+def print_statistical_results(points, description, y_theor):
     """Prints statistics about the distribution of xs and ys in mm for a cloud of points."""
     sigma = np.std(points, axis=0) * 1e3
     print("\n===========================================\n")
@@ -107,11 +108,12 @@ def print_statistical_results(points, description):
     print(f"    -> sigma_x = {sigma[0]:.4f} mm")
     print(f"    -> sigma_y = {sigma[1]:.4f} mm\n")
 
+
     # Statistics
     y_vals = points[:, 1]
     print(f"Skewness: {skew(y_vals, bias=False):.4f}")
     mean_y = np.mean(y_vals) * 1e3
-    print(f"Simulated mean y: {mean_y:.4f} mm | Theoretical: {y_t*1e3:.4f} mm | Delta = {y_t*1e3 - mean_y:+.4f} mm")
+    print(f"Simulated mean y: {mean_y:.4f} mm | Theoretical: {y_theor*1e3:.4f} mm | Delta = {y_theor*1e3 - mean_y:+.4f} mm")
 
 
 def generate_initial_positions(radius, n):
@@ -267,9 +269,9 @@ def plot_full_results(points, model, y_theoretical=None, sigma_phosphor=None, sa
     axs[2].set_ylabel('y [mm]')
     axs[2].set_aspect('equal', adjustable='datalim')
     #Plot a cross with the theorical position of a puntiform source in an homogeneous field
-    if y_theoretical is not None and sigma_phosphor is None:
-        axs[2].scatter(0, y_theoretical * 1e3, color='black', marker='x', s=100, label='Theoretical position')
-        axs[2].legend(loc='upper right')
+
+    axs[2].scatter(0, y_theoretical * 1e3, color='black', marker='x', s=100, label='Theoretical position')
+    axs[2].legend(loc='upper right')
 
     for ax in axs:
         ax.grid(True, linestyle='--', alpha=0.5)
@@ -278,7 +280,7 @@ def plot_full_results(points, model, y_theoretical=None, sigma_phosphor=None, sa
     #String with the used model
     description = model.upper() + (" with_diffusion" if sigma_phosphor else " without_diffusion")
     #Print statistical results of the distribution of points
-    print_statistical_results(points_to_show, description)
+    print_statistical_results(points_to_show, description, y_theoretical)
     #Correcting the description string to be the filename
     filename = description.replace(" ", "_")
     filename = filename + ".png"
@@ -340,7 +342,7 @@ if __name__ == "__main__":
                 plot_full_results(
                     points,
                     model=f"{model} {lens_state}",
-                    y_theoretical=y_t if not use_diffusion else None,
+                    y_theoretical=y_t,
                     sigma_phosphor=sigma,
                     save_dir=args.outdir
                 )
