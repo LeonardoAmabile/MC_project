@@ -46,7 +46,6 @@ MEAN_EFIELD = V0_VOLTAGE / PLATE_DISTANCE     # [V/m]
 SIGMA_EFIELD = MEAN_EFIELD * 0.01             # [V/m]
 
 # Other system characteristics
-K_LENS = VEL_Z * ELECTRON_MASS / (ELECTRON_CHARGE*LENS_TIME*(SCREEN_DISTANCE - 2*PLATE_RADIUS))  # [Kg/C*m^2]
 SIGMA_PHOSPHOR = 7e-6           # [m]
 
 def compute_lens_k(m, q, v_z, t_lens, L, R_p):
